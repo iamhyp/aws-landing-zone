@@ -1,0 +1,21 @@
+# Terraform state holds every ARN and sometimes secret values
+*.tfstate
+*.tfstate.*
+.terraform/
+crash.log
+crash.*.log
+
+# Variable files carry account IDs
+*.tfvars
+*.tfvars.json
+!terraform.tfvars.example
+
+# Credentials
+.env
+*.pem
+*.key
+
+# macOS and editors
+.DS_Store
+.vscode/
+.idea/
