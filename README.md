@@ -10,11 +10,6 @@ attempt to hold that line from the first commit rather than from the last one.
 
 Early. One weekend in, of a planned eight.
 
-No Terraform yet, and that is deliberate. Each component is built in the console
-first, inspected to see what AWS actually created, then expressed as code. It is
-slower and it is the difference between a repository that is owned and one that
-is possessed.
-
 | | |
 | --- | --- |
 | Accounts | 4 |
