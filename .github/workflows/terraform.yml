@@ -1,0 +1,82 @@
+name: terraform
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: terraform/org
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
+        with:
+          role-to-assume: ${{ secrets.AWS_PLAN_ROLE_ARN }}
+          aws-region: ap-southeast-2
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.15.8
+          terraform_wrapper: false
+
+      - run: terraform init -input=false
+
+      - name: plan
+        run: |
+          set +e
+          terraform plan -no-color -input=false > plan.txt 2>&1
+          code=$?
+          if [ $code -ne 0 ]; then
+            grep -iE "error|denied" plan.txt \
+              | sed -E 's/[0-9]{12}/<account-id>/g; s/o-[a-z0-9]{10,32}/<org-id>/g' \
+              | head -30
+            exit $code
+          fi
+          grep -E "^(Plan:|No changes)" plan.txt
+
+
+
+  apply:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: aws-management
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: terraform/org
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
+        with:
+          role-to-assume: ${{ secrets.AWS_APPLY_ROLE_ARN }}
+          aws-region: ap-southeast-2
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.15.8
+          terraform_wrapper: false
+      - run: terraform init -input=false
+      - name: apply
+        run: |
+          set +e
+          terraform apply -auto-approve -no-color -input=false > apply.txt 2>&1
+          code=$?
+          if [ $code -ne 0 ]; then
+            grep -E "Error:" apply.txt \
+              | sed -E 's/[0-9]{12}/<account-id>/g; s/o-[a-z0-9]{10,32}/<org-id>/g' \
+              | head -20
+            exit $code
+          fi
+          grep -E "^(Apply complete|No changes)" apply.txt
