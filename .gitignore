@@ -4,6 +4,11 @@
 .terraform/
 crash.log
 crash.*.log
+*.tfplan
+tfplan
+plan.out
+plan.txt
+apply.txt
 
 # Variable files carry account IDs
 *.tfvars
