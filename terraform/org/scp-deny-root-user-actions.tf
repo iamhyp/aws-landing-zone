@@ -27,5 +27,5 @@ resource "aws_organizations_policy" "deny_root_user_actions" {
 # management account, so SEC-MGMT is outside this control by design.
 resource "aws_organizations_policy_attachment" "deny_root_security" {
   policy_id = aws_organizations_policy.deny_root_user_actions.id
-  target_id = local.security_ou_id
+  target_id = local.ou_ids_by_name["Security"]
 }
