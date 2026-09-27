@@ -26,7 +26,7 @@ resource "aws_organizations_policy" "deny_root_user_actions" {
 # Attached to OUs, never to accounts. SCPs never apply to the
 # management account, so SEC-MGMT is outside this control by design.
 resource "aws_organizations_policy_attachment" "deny_root" {
-  for_each  = toset(["Security"])
+  for_each  = toset(["Security", "Workloads"])
   policy_id = aws_organizations_policy.deny_root_user_actions.id
   target_id = local.ou_ids_by_name[each.key]
 }
