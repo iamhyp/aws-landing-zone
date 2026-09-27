@@ -1,28 +1,16 @@
-# create the scp policy
-resource "aws_organizations_policy" "deny_root_user_actions" {
-  name        = "deny-root-user-actions"
-  description = "Denies all actions by the root user in member accounts. See docs/adr/0004."
-  type        = "SERVICE_CONTROL_POLICY"
-  content     = data.aws_iam_policy_document.deny_root_user_actions.json
-}
-# get the aws organization id
 data "aws_organizations_organization" "current" {}
 
+# "root" is the organisation root, the top of the OU tree, not the
+# root user. Only OUs directly under it are visible to the lookup below.
 data "aws_organizations_organizational_units" "root" {
   parent_id = data.aws_organizations_organization.current.roots[0].id
 }
 
-# loop the through out and get security ou id
+# OUs are looked up by name because OU IDs are redacted values. A
+# duplicated name fails the map; a missing one fails where it is indexed.
 locals {
-  security_ou_id = one([
+  ou_ids_by_name = {
     for ou in data.aws_organizations_organizational_units.root.children :
-    ou.id if ou.name == "Security"
-  ])
+    ou.name => ou.id
+  }
 }
-
-# attach policy to security ou
-resource "aws_organizations_policy_attachment" "deny_root_security" {
-  policy_id = aws_organizations_policy.deny_root_user_actions.id
-  target_id = local.security_ou_id
-}
-
